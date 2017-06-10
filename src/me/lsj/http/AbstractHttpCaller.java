@@ -1,16 +1,25 @@
 package me.lsj.http;
 
-import java.io.InputStream;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
 
 public abstract class AbstractHttpCaller implements HttpCaller{
 	protected final Map<String, String> params = new HashMap<>();
+	protected final Map<String, Cookie> cookies = new HashMap<>();
+	CookieStore cookieStore =  new BasicCookieStore();
 
 	@Override
 	public HttpCaller put(String key, String value){
@@ -19,24 +28,46 @@ public abstract class AbstractHttpCaller implements HttpCaller{
 	}
 	
 	@Override
-	public String send2String(String baseUrl) throws Exception {
-		CloseableHttpClient httpClient = HttpClients.createDefault();
+	public HttpCaller cookie(String key, String value) {
+		return cookie(key, value, "", "/");
+	}
+	
+	@Override
+	public HttpCaller cookie(String key, String value, String domain, String path) {
+		BasicClientCookie  cookie = new BasicClientCookie(key, value);
+		cookie.setDomain(domain);
+		cookie.setPath(path);
+		cookieStore.addCookie(cookie);
+		return this;
+	}
+	
+	@Override
+	public HttpResponse send(String baseUrl) throws Exception {
+		cookieLoad(baseUrl);
+		CloseableHttpClient httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
 		try{
 			CloseableHttpResponse response = send(httpClient, baseUrl);
-			return EntityUtils.toString(response.getEntity());
+			return new HttpResponse(IOUtils.toByteArray(response.getEntity().getContent()), cookieStore);
 		}finally{
 			httpClient.close();
 		}
 	}
 	
-	@Override
-	public InputStream send2InputStream(String baseUrl) throws Exception {
-		CloseableHttpClient httpClient = HttpClients.createDefault();
-		try{
-			CloseableHttpResponse response = send(httpClient, baseUrl);
-			return response.getEntity().getContent();
-		}finally{
-			httpClient.close();
+	private void cookieLoad(String url){
+		List<Cookie> listCookie = cookieStore.getCookies();
+		String domain = extractDomain(url);
+		for(Cookie cookie : listCookie){
+			((BasicClientCookie) cookie).setDomain(domain);
+		}
+	}
+	
+	private String extractDomain(String url){
+		URL u;
+		try {
+			u = new URL(url);
+			return u.getHost();
+		} catch (MalformedURLException e) {
+			return url;
 		}
 	}
 	
