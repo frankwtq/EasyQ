@@ -30,7 +30,7 @@ public void testPost() throws Exception {
 ```Java
 public void testPost() throws Exception {
 	HttpResponse response = new HttpPostCaller()
-			.put("JSESSIONID", "0000prZtRoPe2hQ9kfCJYn9YTEn")	//设置cookie
+			.cookie("JSESSIONID", "0000prZtRoPe2hQ9kfCJYn9YTEn")	//设置cookie
 			.send("http://www.swjtu.edu.cn");	//发送请求
 	System.out.println(response.getString());			//获得响应内容字符串
 }
