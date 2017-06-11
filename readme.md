@@ -50,3 +50,30 @@ public class HttpResponse {
 
 ```
 ### 2.HttpCaller
+这是一个接口，提供以下方法：
+```Java
+public interface HttpCaller {
+	public HttpResponse send(String baseUrl) throws Exception;
+	public HttpCaller put(String key, String value);
+	public HttpCaller cookie(String key, String value);
+	public HttpCaller cookie(String key, String value, String domain, String path);
+}
+```
+该接口的实现都是线程非安全的，因此不能在线程之间共享该对象。每个线程都应该有自己的HttpCaller来负责自己线程的http请求。目前有以下几种实现:
+* HttpGetCaller, 该实现类用于发送Get请求。
+* HttpPostCaller，该实现类用于发送Post请求。
+* HttpMimeCaller，该实现类用于发送Mime请求。
+#### 1).send
+该方法用于发送带cookie的Http请求到对应的url，并得到响应。具体是post请求，或是get请求，甚至是mime格式的post请求都由实现类决定。
+需要注意的是，由于cookie的存在因此多次send之间并非完全独立的，本次请求所得到的cookie是可以直接用于下次请求的。例如下面的基于需要登录的请求代码:
+```Java
+HttpCaller caller = new HttpPostCaller()
+				.put("userid", "2015200563")
+				.put("userpwd", "xxxxxxxxxxx");
+HttpResponse response = caller.send("http://gs.swjtu.edu.cn/pro/userscenter/login");		//登录，收到响应时cookie将会保存于caller中，后面的请求不需要额外再设置cookie。
+response = caller.send("http://gs.swjtu.edu.cn/ucenter/student/home/index");		//直接访问，若没有登录所收到的cookie，将不会收到期望的响应。
+```
+#### 2).put
+该方法用于添加请求参数。主要针对post、get和mime格式的请求参数。
+#### 3).cookie
+通常使用cookie(key, value)即可，这时候domain默认是send的url中的domain，而path默认是"/"。当然重载的cookie可以自行设置domain和path。
