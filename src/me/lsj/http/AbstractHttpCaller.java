@@ -49,19 +49,22 @@ public abstract class AbstractHttpCaller implements HttpCaller{
 			CloseableHttpResponse response = send(httpClient, baseUrl);
 			return new HttpResponse(IOUtils.toByteArray(response.getEntity().getContent()), cookieStore);
 		}finally{
+			params.clear();
 			httpClient.close();
 		}
 	}
 	
 	private void cookieLoad(String url){
 		List<Cookie> listCookie = cookieStore.getCookies();
-		String domain = extractDomain(url);
+		String domain = parseDomain(url);
 		for(Cookie cookie : listCookie){
-			((BasicClientCookie) cookie).setDomain(domain);
+			if(cookie.getDomain() == null || cookie.getDomain().equals("")){
+				((BasicClientCookie) cookie).setDomain(domain);	
+			}
 		}
 	}
 	
-	private String extractDomain(String url){
+	private String parseDomain(String url){
 		URL u;
 		try {
 			u = new URL(url);

@@ -8,11 +8,11 @@ import me.lsj.http.HttpResponse;
 
 public class EasyqTest {
 
-	//@Test
+	@Test
 	public void testLogin() throws Exception {
 		HttpCaller caller = new HttpPostCaller()
 				.put("userid", "2015200563")
-				.put("userpwd", "xxxxxxxxxxx");
+				.put("userpwd", "XXXXXXXXX");
 		
 		HttpResponse response = caller.send("http://gs.swjtu.edu.cn/pro/userscenter/login");
 		System.out.println(response.getString());
@@ -34,7 +34,7 @@ public class EasyqTest {
 		System.out.println(response.getString());
 	}
 	
-	@Test
+	//@Test
 	public void testPost() throws Exception {
 		HttpResponse response = new HttpPostCaller()
 				.put("from", "en")
